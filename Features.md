@@ -71,3 +71,15 @@ Description: Counts consecutive days with check-ins. Shown on dashboard for moti
 Status: completed
 Implementation: Streak logic in src/app/(dashboard)/dashboard/page.tsx
 Date: 2026-04-14
+
+## Onboarding Flow
+Description: 3-step onboarding: welcome screen, disclaimer acknowledgment, and optional daily reminder setup. Redirects to first check-in.
+Status: completed
+Implementation: src/app/onboarding/page.tsx, src/app/api/onboarding/complete/route.ts, src/app/api/onboarding/status/route.ts
+Date: 2026-04-14
+
+## Reminder Settings
+Description: Toggle daily reminder on/off and set reminder time. Stored in UserSettings.
+Status: completed
+Implementation: src/components/ReminderSettings.tsx, src/app/api/settings/reminder/route.ts
+Date: 2026-04-14

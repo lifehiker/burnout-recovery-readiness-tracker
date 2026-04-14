@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScoreCard } from "@/components/ScoreCard"
 import { StatusBadge } from "@/components/StatusBadge"
 import { EmptyState } from "@/components/EmptyState"
+import { MiniScoreChart } from "@/components/MiniScoreChart"
 import { getGuidanceMessage } from "@/lib/guidance"
 import { getBurnoutStatus, calculateTrendDelta } from "@/lib/scoring"
 import type { BurnoutStatus } from "@/types"
@@ -140,22 +141,7 @@ export default async function DashboardPage() {
               <CardTitle className="text-sm font-medium">Last 7 Days</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-32 flex items-end gap-2">
-                {chartData.map((d, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                    <div
-                      className={
-                        d.score === null ? "w-full rounded-t transition-all bg-slate-100" :
-                        d.score >= 70 ? "w-full rounded-t transition-all bg-green-400" :
-                        d.score >= 45 ? "w-full rounded-t transition-all bg-yellow-400" :
-                        "w-full rounded-t transition-all bg-red-400"
-                      }
-                      style={{ height: d.score ? (d.score) + "%" : "4px" }}
-                    />
-                    <span className="text-xs text-muted-foreground">{d.date.split(" ")[1]}</span>
-                  </div>
-                ))}
-              </div>
+              <MiniScoreChart data={chartData} />
             </CardContent>
           </Card>
         </>

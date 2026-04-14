@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,6 +17,24 @@ const SIGNALS = [
 export default function OnboardingPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
+  
+  // Redirect to dashboard if already onboarded
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then(r => r.json())
+      .then(async (session) => {
+        if (session?.user) {
+          const settingsRes = await fetch('/api/onboarding/status')
+          if (settingsRes.ok) {
+            const data = await settingsRes.json()
+            if (data.hasCompletedOnboarding) {
+              router.push('/dashboard')
+            }
+          }
+        }
+      })
+      .catch(() => {})
+  }, [])
   const [acknowledged, setAcknowledged] = useState(false)
   const [reminderEnabled, setReminderEnabled] = useState(false)
   const [reminderTime, setReminderTime] = useState("08:00")

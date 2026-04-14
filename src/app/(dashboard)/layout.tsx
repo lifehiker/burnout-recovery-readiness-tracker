@@ -19,8 +19,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-16 sm:pb-0">
-      <nav className="bg-white border-b border-slate-200 px-4 py-3">
+    <div className="min-h-screen bg-background pb-16 sm:pb-0">
+      <nav className="bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-4 py-3 sticky top-0 z-40">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-1">
             <span className="text-xl mr-2">🧠</span>
