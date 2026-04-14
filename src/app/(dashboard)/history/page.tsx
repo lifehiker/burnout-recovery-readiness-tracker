@@ -1,9 +1,10 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
-import { format, parseISO } from "date-fns"
+import { format, parseISO, subDays } from "date-fns"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/StatusBadge"
 import { EmptyState } from "@/components/EmptyState"
 import type { BurnoutStatus } from "@/types"
@@ -12,10 +13,18 @@ export default async function HistoryPage() {
   const session = await auth()
   if (!session?.user?.id) redirect("/auth/signin")
 
+  const subscription = await prisma.subscription.findUnique({ where: { userId: session.user.id } })
+  const isPremium = subscription?.status === "active" || subscription?.status === "trialing"
+
+  const sevenDaysAgo = format(subDays(new Date(), 7), "yyyy-MM-dd")
+
   const entries = await prisma.checkIn.findMany({
-    where: { userId: session.user.id },
+    where: {
+      userId: session.user.id,
+      ...(isPremium ? {} : { date: { gte: sevenDaysAgo } }),
+    },
     orderBy: { date: "desc" },
-    take: 100,
+    take: isPremium ? 500 : 7,
   })
 
   if (entries.length === 0) {
@@ -60,6 +69,20 @@ export default async function HistoryPage() {
           </Link>
         ))}
       </div>
+
+      {!isPremium && (
+        <Card className="border-indigo-200 bg-indigo-50">
+          <CardContent className="pt-4 pb-4 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-indigo-900">Unlock unlimited history</p>
+              <p className="text-xs text-indigo-700 mt-0.5">Free plan shows the last 7 days. Upgrade to see your full history and edit past entries.</p>
+            </div>
+            <Button asChild size="sm" className="shrink-0">
+              <Link href="/upgrade">Upgrade</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
