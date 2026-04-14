@@ -7,13 +7,15 @@ import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
 import { format } from "date-fns"
 import { ExportButton } from "@/components/ExportButton"
+import { ReminderSettings } from "@/components/ReminderSettings"
 
 export default async function SettingsPage() {
   const session = await auth()
   if (!session?.user?.id) redirect("/auth/signin")
 
-  const [subscription] = await Promise.all([
+  const [subscription, userSettings] = await Promise.all([
     prisma.subscription.findUnique({ where: { userId: session.user.id } }),
+    prisma.userSettings.findUnique({ where: { userId: session.user.id } }),
   ])
 
   const isPremium = subscription?.status === "active" || subscription?.status === "trialing"
@@ -43,6 +45,15 @@ export default async function SettingsPage() {
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader><CardTitle>Reminders</CardTitle></CardHeader>
+        <CardContent>
+          <ReminderSettings
+            enabled={userSettings?.reminderEnabled ?? false}
+            time={userSettings?.reminderTime ?? "08:00"}
+          />
         </CardContent>
       </Card>
       <Card>

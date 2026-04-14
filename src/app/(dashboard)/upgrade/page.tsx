@@ -76,7 +76,7 @@ export default function UpgradePage() {
           <ul className="space-y-2">
             {features.map(f => (
               <li key={f} className="flex items-center gap-2 text-sm">
-                <span className="text-green-500">∓</span>
+                <span className="text-green-500">✓</span>
                 <span>{f}</span>
               </li>
             ))}
