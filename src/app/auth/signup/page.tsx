@@ -1,41 +1,36 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Suspense } from 'react'
 
-function SignInForm() {
+export default function SignUpPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-        callbackUrl,
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name }),
       })
-      if (result?.error) {
-        setError('Invalid email or password')
-      } else {
-        router.push(callbackUrl)
-        router.refresh()
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'Sign up failed')
+        return
       }
+      router.push('/auth/signin?registered=1')
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
@@ -59,10 +54,10 @@ function SignInForm() {
         <div className='relative space-y-8'>
           <div>
             <h1 className='text-4xl font-bold leading-tight mb-4'>
-              Know your limits<br/>before you hit them.
+              Start tracking<br/>in 30 seconds.
             </h1>
             <p className='text-indigo-100 text-lg leading-relaxed'>
-              A 30-second daily check-in that turns your stress, sleep, and energy signals into a clear readiness score.
+              Six daily signals. One readiness score. Clear trend guidance over time.
             </p>
           </div>
           <div className='space-y-4'>
@@ -92,17 +87,21 @@ function SignInForm() {
             <p className='text-slate-500 text-sm mt-1'>Daily readiness check-in</p>
           </div>
           <div className='hidden lg:block'>
-            <h2 className='text-2xl font-bold text-slate-900'>Welcome back</h2>
-            <p className='text-slate-500 mt-1'>Sign in to your account to continue.</p>
+            <h2 className='text-2xl font-bold text-slate-900'>Create your account</h2>
+            <p className='text-slate-500 mt-1'>Start tracking your readiness today.</p>
           </div>
           <form onSubmit={handleSubmit} className='space-y-4'>
+            <div className='space-y-2'>
+              <Label htmlFor='name'>Name (optional)</Label>
+              <Input id='name' type='text' placeholder='Your name' value={name} onChange={(e) => setName(e.target.value)} autoComplete='name' />
+            </div>
             <div className='space-y-2'>
               <Label htmlFor='email'>Email</Label>
               <Input id='email' type='email' placeholder='you@example.com' value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete='email' />
             </div>
             <div className='space-y-2'>
               <Label htmlFor='password'>Password</Label>
-              <Input id='password' type='password' placeholder='••••••••' value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete='current-password' />
+              <Input id='password' type='password' placeholder='Min. 8 characters' value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete='new-password' minLength={8} />
             </div>
             {error && (
               <p className='text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2'>
@@ -110,28 +109,20 @@ function SignInForm() {
               </p>
             )}
             <Button type='submit' className='w-full h-11' disabled={loading}>
-              {loading ? 'Signing in…' : 'Sign in'}
+              {loading ? 'Creating account…' : 'Create account'}
             </Button>
           </form>
           <p className='text-center text-sm text-slate-600'>
-            Don&apos;t have an account?{' '}
-            <Link href='/auth/signup' className='font-medium text-indigo-600 hover:text-indigo-500'>
-              Create one
+            Already have an account?{' '}
+            <Link href='/auth/signin' className='font-medium text-indigo-600 hover:text-indigo-500'>
+              Sign in
             </Link>
           </p>
           <p className='text-center text-xs text-slate-400'>
-            By signing in, you agree this is a self-reporting tool only — not medical advice or a diagnostic tool.
+            By creating an account, you agree this is a self-reporting tool only — not medical advice.
           </p>
         </div>
       </div>
     </div>
-  )
-}
-
-export default function SignInPage() {
-  return (
-    <Suspense>
-      <SignInForm />
-    </Suspense>
   )
 }

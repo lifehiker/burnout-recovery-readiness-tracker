@@ -4,6 +4,9 @@ import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 
 export async function POST(req: NextRequest) {
+  if (!stripe) {
+    return NextResponse.json({ error: "Payments not configured" }, { status: 503 })
+  }
   const body = await req.text()
   const sig = req.headers.get("stripe-signature")!
   let event: Stripe.Event
@@ -13,7 +16,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
   }
   const getSubscription = async (stripeSubscriptionId: string) => {
-    return stripe.subscriptions.retrieve(stripeSubscriptionId)
+    return stripe!.subscriptions.retrieve(stripeSubscriptionId)
   }
   switch (event.type) {
     case "checkout.session.completed": {
