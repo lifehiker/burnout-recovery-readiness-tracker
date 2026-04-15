@@ -769,9 +769,8 @@ CMD ["node", "server.js"]
 # COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 # COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-# COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-# COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
-# COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+# # Copy full node_modules so the Prisma CLI has all its runtime deps (v6+ requires effect, c12, etc.)
+# COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 # USER nextjs
 # EXPOSE 3000
 # ENV PORT=3000
@@ -913,4 +912,5 @@ AUTH_SECRET="your-secret-here"  # generate with: openssl rand -base64 32
 - **Do NOT run `npx prisma db push` in the Dockerfile builder stage** — it is not needed at build time. The CMD already runs `prisma db push` at container startup when a real `/data/app.db` path is available.
 - **Use `node:20-slim` (not `node:20-alpine`)** — Debian slim avoids Alpine musl/libssl issues. Add `RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*` to BOTH the builder and runner stages for Prisma's schema engine.
 - **Set `binaryTargets` in schema.prisma** — always include `binaryTargets = ["native", "debian-openssl-3.0.x"]` in the Prisma generator block so Prisma generates the correct engine binary for the Debian container environment.
+- **Copy full node_modules in the runner stage** — do NOT selectively copy `node_modules/.prisma`, `node_modules/prisma`, `node_modules/@prisma` separately. Instead use `COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules` to copy everything. Prisma v6+ CLI has deep transitive deps (`@prisma/config` → `effect`, `c12`, etc.) that break if not all present.
 
