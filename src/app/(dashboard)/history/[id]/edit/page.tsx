@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { format } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -9,6 +9,7 @@ import { SignalSlider } from "@/components/SignalSlider"
 import { ScoreCard } from "@/components/ScoreCard"
 import { StatusBadge } from "@/components/StatusBadge"
 import { calculateReadinessScore, getBurnoutStatus } from "@/lib/scoring"
+import Link from "next/link"
 import type { BurnoutStatus } from "@/types"
 
 const signals = [
@@ -26,17 +27,28 @@ export default function EditEntryPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [date, setDate] = useState("")
+  const [isPastEntry, setIsPastEntry] = useState(false)
+  const [isPremium, setIsPremium] = useState<boolean | null>(null)
   const [values, setValues] = useState({ stress: 3, energy: 3, sleep: 3, soreness: 3, workload: 3, mood: 3 })
   const [note, setNote] = useState("")
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    const today = new Date().toISOString().split("T")[0]
     fetch("/api/checkin/" + id)
       .then(r => r.json())
       .then(data => {
         setDate(data.date)
         setValues({ stress: data.stress, energy: data.energy, sleep: data.sleep, soreness: data.soreness, workload: data.workload, mood: data.mood })
         setNote(data.note ?? "")
+        const past = data.date < today
+        setIsPastEntry(past)
+        if (past) {
+          fetch("/api/onboarding/status")
+            .then(r => r.json())
+            .then(s => setIsPremium(s.isPremium ?? false))
+            .catch(() => setIsPremium(false))
+        }
       })
       .catch(() => setError("Failed to load entry"))
       .finally(() => setIsLoading(false))
@@ -70,7 +82,29 @@ export default function EditEntryPage() {
     router.refresh()
   }
 
-  if (isLoading) return <div className="flex justify-center py-16 text-muted-foreground">Loading...</div>
+  if (isLoading || (isPastEntry && isPremium === null)) return <div className="flex justify-center py-16 text-muted-foreground">Loading...</div>
+
+  if (isPastEntry && !isPremium) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Edit Check-In</h1>
+          {date && <p className="text-slate-500 text-sm">{format(parseISO(date), "EEEE, MMMM d, yyyy")}</p>}
+        </div>
+        <Card className="border-indigo-200 bg-indigo-50">
+          <CardContent className="pt-6 pb-6 text-center space-y-3">
+            <div className="text-3xl">🔒</div>
+            <h3 className="font-semibold text-indigo-900">Premium Feature</h3>
+            <p className="text-sm text-indigo-700">Editing past check-ins is available on the Premium plan. Upgrade to edit and manage your history.</p>
+            <Button asChild className="mt-2">
+              <Link href="/upgrade">Upgrade to Premium</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Button variant="outline" onClick={() => router.push("/history")} className="w-full">Back to History</Button>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">

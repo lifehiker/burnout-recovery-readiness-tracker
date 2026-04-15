@@ -9,6 +9,8 @@ import { ScoreCard } from "@/components/ScoreCard"
 import { StatusBadge } from "@/components/StatusBadge"
 import { EmptyState } from "@/components/EmptyState"
 import { MiniScoreChart } from "@/components/MiniScoreChart"
+import { UpgradedBanner } from "@/components/UpgradedBanner"
+import { Suspense } from "react"
 import { getGuidanceMessage } from "@/lib/guidance"
 import { getBurnoutStatus, calculateTrendDelta } from "@/lib/scoring"
 import type { BurnoutStatus } from "@/types"
@@ -65,6 +67,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <Suspense fallback={null}><UpgradedBanner /></Suspense>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>

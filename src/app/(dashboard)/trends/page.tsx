@@ -1,12 +1,11 @@
 "use client"
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { EmptyState } from "@/components/EmptyState"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts"
 
 interface TrendData {
@@ -14,6 +13,24 @@ interface TrendData {
   scores: (number | null)[]
   signals: { date: string; stress: number; energy: number; sleep: number; soreness: number; workload: number; mood: number }[]
   isPremium: boolean
+}
+
+const SIGNAL_COLORS = {
+  energy: "#22c55e",
+  sleep: "#6366f1",
+  mood: "#f59e0b",
+  stress: "#ef4444",
+  soreness: "#f97316",
+  workload: "#8b5cf6",
+}
+
+const SIGNAL_LABELS: Record<string, string> = {
+  energy: "Energy",
+  sleep: "Sleep",
+  mood: "Mood",
+  stress: "Stress",
+  soreness: "Soreness",
+  workload: "Workload",
 }
 
 export default function TrendsPage() {
@@ -89,20 +106,30 @@ export default function TrendsPage() {
           {signalData.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm font-medium">Signal Averages</CardTitle>
+                <CardTitle className="text-sm font-medium">Daily Signals — Last {days} Days</CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">Scale: 1 (lowest) to 5 (highest). For stress, soreness &amp; workload, lower is better.</p>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={signalData}>
+                <ResponsiveContainer width="100%" height={220}>
+                  <LineChart data={signalData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                    <YAxis domain={[0, 5]} tick={{ fontSize: 11 }} />
+                    <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 11 }} />
                     <Tooltip />
-                    <Legend />
-                    <Bar dataKey="energy" fill="#22c55e" />
-                    <Bar dataKey="sleep" fill="#6366f1" />
-                    <Bar dataKey="mood" fill="#f59e0b" />
-                  </BarChart>
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    {Object.entries(SIGNAL_COLORS).map(([key, color]) => (
+                      <Line
+                        key={key}
+                        type="monotone"
+                        dataKey={key}
+                        name={SIGNAL_LABELS[key]}
+                        stroke={color}
+                        strokeWidth={1.5}
+                        dot={false}
+                        connectNulls={false}
+                      />
+                    ))}
+                  </LineChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
