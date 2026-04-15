@@ -24,11 +24,12 @@ export function UpgradedBanner() {
         <p className="text-xs text-green-700">Your subscription is active. All premium features are now unlocked.</p>
       </div>
       <button
+        type="button"
         onClick={() => setShow(false)}
         className="ml-auto text-green-600 hover:text-green-800 text-lg leading-none"
         aria-label="Dismiss"
       >
-        x
+        ×
       </button>
     </div>
   )

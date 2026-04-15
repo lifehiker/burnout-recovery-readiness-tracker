@@ -34,7 +34,7 @@ export default function OnboardingPage() {
         }
       })
       .catch(() => {})
-  }, [])
+  }, [router])
   const [acknowledged, setAcknowledged] = useState(false)
   const [reminderEnabled, setReminderEnabled] = useState(false)
   const [reminderTime, setReminderTime] = useState("08:00")

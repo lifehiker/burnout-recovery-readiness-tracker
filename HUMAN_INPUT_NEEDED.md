@@ -2,48 +2,86 @@
 
 The following environment variables and external services need to be configured before the app can run in production.
 
-## 1. Google OAuth Credentials
+## 1. AUTH_SECRET (Required)
 
-1. Go to https://console.cloud.google.com/
-2. Create a new project or select existing
-3. Enable the Google OAuth 2.0 API
-4. Create OAuth 2.0 credentials (Web Application)
-5. Add authorized redirect URIs:
-   - http://localhost:3000/api/auth/callback/google (development)
-   - https://yourdomain.com/api/auth/callback/google (production)
-6. Copy values to .env: AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET
+Generate a secure secret for NextAuth session encryption:
 
-## 2. Stripe Account and Price IDs
+```bash
+openssl rand -base64 32
+```
+
+Set `AUTH_SECRET` in your production environment.
+
+## 2. Stripe Account and Price IDs (Required for Payments)
+
+Payments are optional — the app works without Stripe but the upgrade flow will be disabled.
 
 1. Create a Stripe account at https://stripe.com
-2. Create two subscription products: Monthly at 4.99/month, Annual at 29.99/year
-3. Copy the Price IDs from the Stripe dashboard
-4. Set up a webhook endpoint pointing to /api/webhooks/stripe
-5. Copy STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_MONTHLY_PRICE_ID, STRIPE_ANNUAL_PRICE_ID to .env
+2. Create two subscription products in the Stripe Dashboard:
+   - **Monthly Plan**: $4.99/month
+   - **Annual Plan**: $29.99/year (with 7-day free trial)
+3. Copy the Price IDs from each product
+4. Set up a webhook endpoint in the Stripe Dashboard pointing to:
+   `https://yourdomain.com/api/webhooks/stripe`
+   Subscribe to events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
+5. Set the following environment variables:
+   - `STRIPE_SECRET_KEY` — from Stripe Dashboard > Developers > API keys
+   - `STRIPE_PUBLISHABLE_KEY` — from Stripe Dashboard > Developers > API keys
+   - `STRIPE_WEBHOOK_SECRET` — from the webhook endpoint in Stripe Dashboard
+   - `STRIPE_MONTHLY_PRICE_ID` — Price ID for the monthly plan
+   - `STRIPE_ANNUAL_PRICE_ID` — Price ID for the annual plan
 
-## 3. PostgreSQL Database URL
+## 3. NEXT_PUBLIC_APP_URL (Required)
 
-1. Set up a PostgreSQL database (e.g., Neon, Supabase, Railway, or self-hosted)
-2. Run: npx prisma db push (to create the schema)
-3. Set DATABASE_URL in .env
+Set to your production domain:
 
-## 4. AUTH_SECRET Generation
+```
+NEXT_PUBLIC_APP_URL=https://yourdomain.com
+```
 
-Generate with: openssl rand -base64 32
-Set AUTH_SECRET in .env
+## 4. Database
 
-## 5. Resend API Key (for email)
+The app uses **SQLite** — no external database service needed.
 
-1. Create an account at https://resend.com
-2. Generate an API key and verify your domain
-3. Set RESEND_API_KEY and EMAIL_FROM in .env
+In production (Docker), the database lives at `/data/app.db` and is automatically initialized on container startup.
 
-## 6. NEXT_PUBLIC_APP_URL
+For local development:
+```bash
+npm run db:push   # creates ./dev.db
+npm run dev
+```
 
-Set to your production domain in .env
+## Complete Environment Example
 
-## Quick Start
+```env
+# Required
+AUTH_SECRET="your-generated-secret-here"
+NEXT_PUBLIC_APP_URL="https://yourdomain.com"
+DATABASE_URL="file:./dev.db"
 
-1. Copy .env.example to .env and fill in all values
-2. Run: npm run db:push
-3. Run: npm run dev
+# Optional — app works without these, but payments will be disabled
+STRIPE_SECRET_KEY="sk_live_..."
+STRIPE_PUBLISHABLE_KEY="pk_live_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
+STRIPE_MONTHLY_PRICE_ID="price_..."
+STRIPE_ANNUAL_PRICE_ID="price_..."
+```
+
+## Quick Start (Development)
+
+```bash
+npm install
+npm run db:push
+npm run dev
+```
+
+## Production (Docker)
+
+```bash
+docker build -t burnout-tracker .
+docker run -p 3000:3000 \
+  -e AUTH_SECRET="your-secret" \
+  -e NEXT_PUBLIC_APP_URL="https://yourdomain.com" \
+  -v /path/to/data:/data \
+  burnout-tracker
+```

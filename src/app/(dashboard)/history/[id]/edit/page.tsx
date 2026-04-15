@@ -110,7 +110,7 @@ export default function EditEntryPage() {
     <div className="space-y-6 max-w-2xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Edit Check-In</h1>
-        {date && <p className="text-slate-500 text-sm">{date}</p>}
+        {date && <p className="text-slate-500 text-sm">{format(parseISO(date), "EEEE, MMMM d, yyyy")}</p>}
       </div>
 
       <div className="flex items-center gap-4">
