@@ -36,9 +36,14 @@ export default async function DashboardPage() {
   const isPremium = subscription?.status === "active" || subscription?.status === "trialing"
 
   const last7 = recentEntries.filter(e => e.date >= sevenDaysAgo).map(e => e.readinessScore)
-  const prev7 = recentEntries.filter(e => e.date < sevenDaysAgo).map(e => e.readinessScore)
   const sevenDayAvg = last7.length > 0 ? Math.round(last7.reduce((a, b) => a + b, 0) / last7.length) : null
-  const trendDelta = calculateTrendDelta(last7.slice(0, 3), last7.slice(-3))
+
+  // Safe trend delta: only calculate when we have enough data points on each side
+  const firstHalf = last7.slice(Math.ceil(last7.length / 2))
+  const secondHalf = last7.slice(0, Math.floor(last7.length / 2))
+  const trendDelta = firstHalf.length > 0 && secondHalf.length > 0
+    ? calculateTrendDelta(secondHalf, firstHalf)
+    : null
 
   let streak = 0
   const sortedDates = recentEntries.map(e => e.date).sort().reverse()
@@ -59,22 +64,30 @@ export default async function DashboardPage() {
   const thirtyDayTrend = trendDelta === null ? null : trendDelta > 5 ? "up" : trendDelta < -5 ? "down" : "stable"
   const trendIcon = thirtyDayTrend === "up" ? "↑" : thirtyDayTrend === "down" ? "↓" : "→"
   const trendColor = thirtyDayTrend === "up" ? "text-green-600" : thirtyDayTrend === "down" ? "text-red-600" : "text-yellow-600"
+  const trendBg = thirtyDayTrend === "up" ? "bg-green-50" : thirtyDayTrend === "down" ? "bg-red-50" : "bg-yellow-50"
+
   const chartData = Array.from({ length: 7 }, (_, i) => {
     const date = format(subDays(new Date(), 6 - i), "yyyy-MM-dd")
     const entry = recentEntries.find(e => e.date === date)
     return { date: format(parseISO(date), "MMM d"), score: entry?.readinessScore ?? null }
   })
 
+  const userName = session.user.name ? session.user.name.split(" ")[0] : null
+
   return (
     <div className="space-y-6">
       <Suspense fallback={null}><UpgradedBanner /></Suspense>
-      <div className="flex items-center justify-between">
+
+      {/* Header */}
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-slate-900">
+            {userName ? `Hey, ${userName}` : "Dashboard"}
+          </h1>
           <p className="text-slate-500 text-sm">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
         </div>
-        <Button asChild>
-          <Link href="/checkin">{todayEntry ? "Edit Today" : "Check In Today"}</Link>
+        <Button asChild size="sm">
+          <Link href="/checkin">{todayEntry ? "Edit Today" : "Check In"}</Link>
         </Button>
       </div>
 
@@ -86,35 +99,45 @@ export default async function DashboardPage() {
         />
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Card className="col-span-2 sm:col-span-1">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500">Today&apos;s Score</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-3">
-                  <ScoreCard score={todayScore} size="sm" />
-                  <div>
-                    {burnoutStatus && <StatusBadge status={burnoutStatus} />}
-                  </div>
+          {/* Hero score card */}
+          <Card className="border-slate-200">
+            <CardContent className="pt-6 pb-6">
+              <div className="flex items-center gap-6">
+                <ScoreCard score={todayScore} size="lg" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-500 mb-1">
+                    {todayEntry ? "Today's Readiness" : "No check-in yet today"}
+                  </p>
+                  {burnoutStatus && (
+                    <div className="mb-2">
+                      <StatusBadge status={burnoutStatus} />
+                    </div>
+                  )}
+                  {!todayEntry && (
+                    <p className="text-xs text-muted-foreground">Log your check-in to see today's score</p>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Stats row */}
+          <div className="grid grid-cols-3 gap-3">
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500">7-Day Avg</CardTitle>
+              <CardHeader className="pb-1 pt-4 px-4">
+                <CardTitle className="text-xs font-medium text-slate-500 uppercase tracking-wide">7-Day Avg</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-slate-900">{sevenDayAvg ?? "—"}</div>
+              <CardContent className="px-4 pb-4">
+                <div className="text-2xl font-bold text-slate-900">{sevenDayAvg ?? "—"}</div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500">30-Day Trend</CardTitle>
+              <CardHeader className="pb-1 pt-4 px-4">
+                <CardTitle className="text-xs font-medium text-slate-500 uppercase tracking-wide">Trend</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className={["text-3xl font-bold", trendColor].join(" ")}>
+              <CardContent className="px-4 pb-4">
+                <div className={["text-2xl font-bold", trendColor].join(" ")}>
                   {thirtyDayTrend ? trendIcon : "—"}
                 </div>
                 <p className="text-xs text-muted-foreground capitalize">{thirtyDayTrend ?? "No data"}</p>
@@ -122,31 +145,58 @@ export default async function DashboardPage() {
             </Card>
 
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500">Streak</CardTitle>
+              <CardHeader className="pb-1 pt-4 px-4">
+                <CardTitle className="text-xs font-medium text-slate-500 uppercase tracking-wide">Streak</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-slate-900">{streak}</div>
+              <CardContent className="px-4 pb-4">
+                <div className="text-2xl font-bold text-slate-900">{streak}</div>
                 <p className="text-xs text-muted-foreground">days</p>
               </CardContent>
             </Card>
           </div>
 
+          {/* Guidance banner */}
           {guidance && (
-            <Card className="bg-indigo-50 border-indigo-200">
-              <CardContent className="pt-4">
-                <p className="text-sm text-indigo-800 font-medium">💡 {guidance}</p>
-              </CardContent>
-            </Card>
+            <div className={["rounded-xl border px-4 py-3 flex items-start gap-3",
+              burnoutStatus === "low" ? "bg-green-50 border-green-200" :
+              burnoutStatus === "elevated" ? "bg-red-50 border-red-200" :
+              "bg-amber-50 border-amber-200"
+            ].join(" ")}>
+              <span className="text-lg shrink-0 mt-0.5">
+                {burnoutStatus === "low" ? "✅" : burnoutStatus === "elevated" ? "⚠️" : "💛"}
+              </span>
+              <p className={["text-sm font-medium",
+                burnoutStatus === "low" ? "text-green-800" :
+                burnoutStatus === "elevated" ? "text-red-800" :
+                "text-amber-800"
+              ].join(" ")}>{guidance}</p>
+            </div>
           )}
+
+          {/* Chart */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Last 7 Days</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-slate-700">Last 7 Days</CardTitle>
             </CardHeader>
             <CardContent>
               <MiniScoreChart data={chartData} />
             </CardContent>
           </Card>
+
+          {/* Premium CTA if free */}
+          {!isPremium && recentEntries.length >= 5 && (
+            <Card className="border-indigo-200 bg-gradient-to-r from-indigo-50 to-violet-50">
+              <CardContent className="pt-4 pb-4 flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-indigo-900">Unlock 30/90-day insights</p>
+                  <p className="text-xs text-indigo-700 mt-0.5">See long-term trends, edit history, and export your data.</p>
+                </div>
+                <Button asChild size="sm" className="shrink-0">
+                  <Link href="/upgrade">Upgrade</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </>
       )}
     </div>
