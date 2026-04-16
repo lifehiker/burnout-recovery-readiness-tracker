@@ -13,14 +13,14 @@ import { UpgradedBanner } from "@/components/UpgradedBanner"
 import { Suspense } from "react"
 import { getGuidanceMessage } from "@/lib/guidance"
 import { getBurnoutStatus, calculateTrendDelta } from "@/lib/scoring"
-import type { BurnoutStatus } from "@/types"
+import type { BurnoutStatus, CheckInEntry } from "@/types"
 
 export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user?.id) redirect("/auth/signin")
 
   const today = format(new Date(), "yyyy-MM-dd")
-  const sevenDaysAgo = format(subDays(new Date(), 7), "yyyy-MM-dd")
+  const sevenDaysAgo = format(subDays(new Date(), 6), "yyyy-MM-dd")
   const thirtyDaysAgo = format(subDays(new Date(), 30), "yyyy-MM-dd")
 
   const [todayEntry, recentEntries, subscription] = await Promise.all([
@@ -34,41 +34,52 @@ export default async function DashboardPage() {
   ])
 
   const isPremium = subscription?.status === "active" || subscription?.status === "trialing"
+  const typedRecentEntries = recentEntries as CheckInEntry[]
 
-  const last7 = recentEntries.filter(e => e.date >= sevenDaysAgo).map(e => e.readinessScore)
+  const chronologicalEntries = [...typedRecentEntries].sort((a, b) => a.date.localeCompare(b.date))
+  const last7Entries = chronologicalEntries.filter((entry) => entry.date >= sevenDaysAgo)
+  const last7 = last7Entries.map((entry) => entry.readinessScore)
   const sevenDayAvg = last7.length > 0 ? Math.round(last7.reduce((a, b) => a + b, 0) / last7.length) : null
 
-  // Safe trend delta: only calculate when we have enough data points on each side
-  const firstHalf = last7.slice(Math.ceil(last7.length / 2))
-  const secondHalf = last7.slice(0, Math.floor(last7.length / 2))
-  const trendDelta = firstHalf.length > 0 && secondHalf.length > 0
-    ? calculateTrendDelta(secondHalf, firstHalf)
-    : null
+  const midpoint = Math.floor(last7.length / 2)
+  const olderWindow = last7.slice(0, midpoint)
+  const recentWindow = last7.slice(midpoint)
+  const trendDelta =
+    olderWindow.length > 0 && recentWindow.length > 0
+      ? calculateTrendDelta(recentWindow, olderWindow)
+      : null
 
   let streak = 0
-  const sortedDates = recentEntries.map(e => e.date).sort().reverse()
+  const sortedDates = typedRecentEntries.map((entry) => entry.date).sort().reverse()
   let checkDate = today
   for (const date of sortedDates) {
     if (date === checkDate) {
       streak++
       const d = parseISO(checkDate)
       checkDate = format(subDays(d, 1), "yyyy-MM-dd")
-    } else break
+    } else {
+      break
+    }
   }
 
   const todayScore = todayEntry?.readinessScore ?? null
-  const burnoutStatus = todayEntry ? (todayEntry.burnoutStatus as BurnoutStatus) :
-    sevenDayAvg ? getBurnoutStatus(sevenDayAvg, sevenDayAvg, trendDelta) : null
-  const guidance = burnoutStatus ? getGuidanceMessage(burnoutStatus, todayScore ?? sevenDayAvg ?? 50) : null
+  const burnoutStatus = todayEntry
+    ? (todayEntry.burnoutStatus as BurnoutStatus)
+    : sevenDayAvg
+      ? getBurnoutStatus(sevenDayAvg, sevenDayAvg, trendDelta)
+      : null
+  const guidance = burnoutStatus
+    ? getGuidanceMessage(burnoutStatus, todayScore ?? sevenDayAvg ?? 50)
+    : null
 
   const thirtyDayTrend = trendDelta === null ? null : trendDelta > 5 ? "up" : trendDelta < -5 ? "down" : "stable"
   const trendIcon = thirtyDayTrend === "up" ? "↑" : thirtyDayTrend === "down" ? "↓" : "→"
-  const trendColor = thirtyDayTrend === "up" ? "text-green-600" : thirtyDayTrend === "down" ? "text-red-600" : "text-yellow-600"
-  const trendBg = thirtyDayTrend === "up" ? "bg-green-50" : thirtyDayTrend === "down" ? "bg-red-50" : "bg-yellow-50"
+  const trendColor =
+    thirtyDayTrend === "up" ? "text-[#1e6d67]" : thirtyDayTrend === "down" ? "text-[#c45244]" : "text-[#b46d2f]"
 
   const chartData = Array.from({ length: 7 }, (_, i) => {
     const date = format(subDays(new Date(), 6 - i), "yyyy-MM-dd")
-    const entry = recentEntries.find(e => e.date === date)
+    const entry = typedRecentEntries.find((item) => item.date === date)
     return { date: format(parseISO(date), "MMM d"), score: entry?.readinessScore ?? null }
   })
 
@@ -76,22 +87,44 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <Suspense fallback={null}><UpgradedBanner /></Suspense>
+      <Suspense fallback={null}>
+        <UpgradedBanner />
+      </Suspense>
 
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            {userName ? `Hey, ${userName}` : "Dashboard"}
-          </h1>
-          <p className="text-slate-500 text-sm">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
+      <section className="paper-panel overflow-hidden">
+        <div className="flex flex-col gap-8 p-6 sm:p-8">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-3">
+              <div className="eyebrow">Daily Pulse</div>
+              <div>
+                <h1 className="text-4xl sm:text-5xl editorial-title">
+                  {userName ? `Hey, ${userName}` : "Dashboard"}
+                </h1>
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                  Your recovery ledger turns six subjective signals into a quick daily read on strain, readiness, and drift.
+                </p>
+              </div>
+            </div>
+            <Button asChild size="lg" className="shrink-0">
+              <Link href="/checkin">{todayEntry ? "Edit Today" : "Check In"}</Link>
+            </Button>
+          </div>
+          <div className="h-px ink-divider" />
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                {format(new Date(), "EEEE, MMMM d, yyyy")}
+              </p>
+              <p className="mt-2 text-sm text-slate-700">
+                {guidance ?? "Take today’s reading to see how your system is holding up."}
+              </p>
+            </div>
+            {burnoutStatus && <StatusBadge status={burnoutStatus} />}
+          </div>
         </div>
-        <Button asChild size="sm">
-          <Link href="/checkin">{todayEntry ? "Edit Today" : "Check In"}</Link>
-        </Button>
-      </div>
+      </section>
 
-      {recentEntries.length === 0 ? (
+      {typedRecentEntries.length === 0 ? (
         <EmptyState
           title="No check-ins yet"
           description="Complete your first daily check-in to start tracking your burnout risk and readiness score."
@@ -99,81 +132,78 @@ export default async function DashboardPage() {
         />
       ) : (
         <>
-          {/* Hero score card */}
-          <Card className="border-slate-200">
-            <CardContent className="pt-6 pb-6">
-              <div className="flex items-center gap-6">
-                <ScoreCard score={todayScore} size="lg" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-500 mb-1">
-                    {todayEntry ? "Today's Readiness" : "No check-in yet today"}
-                  </p>
-                  {burnoutStatus && (
-                    <div className="mb-2">
-                      <StatusBadge status={burnoutStatus} />
+          <section className="grid gap-4 lg:grid-cols-[1.35fr_0.95fr]">
+            <Card className="overflow-hidden">
+              <CardContent className="p-6 sm:p-8">
+                <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+                  <ScoreCard score={todayScore} size="lg" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                      {todayEntry ? "Today's Readiness" : "Awaiting today's entry"}
+                    </p>
+                    <div className="mt-3 flex items-center gap-3">
+                      {burnoutStatus && <StatusBadge status={burnoutStatus} />}
                     </div>
-                  )}
-                  {!todayEntry && (
-                    <p className="text-xs text-muted-foreground">Log your check-in to see today's score</p>
-                  )}
+                    <p className="mt-4 max-w-md text-sm leading-relaxed text-slate-700">
+                      {todayEntry
+                        ? "A single score is only a snapshot. Use the trend and note fields to spot slow-building strain."
+                        : "You haven’t logged today yet. Save a check-in to refresh the score and guidance."}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Stats row */}
-          <div className="grid grid-cols-3 gap-3">
-            <Card>
-              <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-xs font-medium text-slate-500 uppercase tracking-wide">7-Day Avg</CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                <div className="text-2xl font-bold text-slate-900">{sevenDayAvg ?? "—"}</div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-xs font-medium text-slate-500 uppercase tracking-wide">Trend</CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                <div className={["text-2xl font-bold", trendColor].join(" ")}>
-                  {thirtyDayTrend ? trendIcon : "—"}
-                </div>
-                <p className="text-xs text-muted-foreground capitalize">{thirtyDayTrend ?? "No data"}</p>
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-3 gap-3 lg:grid-cols-1">
+              <Card>
+                <CardHeader className="pb-1 pt-5 px-5">
+                  <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">7-Day Avg</CardTitle>
+                </CardHeader>
+                <CardContent className="px-5 pb-5">
+                  <div className="text-3xl editorial-title">{sevenDayAvg ?? "—"}</div>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-xs font-medium text-slate-500 uppercase tracking-wide">Streak</CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                <div className="text-2xl font-bold text-slate-900">{streak}</div>
-                <p className="text-xs text-muted-foreground">days</p>
-              </CardContent>
-            </Card>
-          </div>
+              <Card>
+                <CardHeader className="pb-1 pt-5 px-5">
+                  <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">30-Day Drift</CardTitle>
+                </CardHeader>
+                <CardContent className="px-5 pb-5">
+                  <div className={["text-3xl editorial-title", trendColor].join(" ")}>
+                    {thirtyDayTrend ? trendIcon : "—"}
+                  </div>
+                  <p className="text-xs text-muted-foreground capitalize">{thirtyDayTrend ?? "No data"}</p>
+                </CardContent>
+              </Card>
 
-          {/* Guidance banner */}
+              <Card>
+                <CardHeader className="pb-1 pt-5 px-5">
+                  <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Streak</CardTitle>
+                </CardHeader>
+                <CardContent className="px-5 pb-5">
+                  <div className="text-3xl editorial-title">{streak}</div>
+                  <p className="text-xs text-muted-foreground">consecutive days</p>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+
           {guidance && (
-            <div className={["rounded-xl border px-4 py-3 flex items-start gap-3",
-              burnoutStatus === "low" ? "bg-green-50 border-green-200" :
-              burnoutStatus === "elevated" ? "bg-red-50 border-red-200" :
-              "bg-amber-50 border-amber-200"
-            ].join(" ")}>
-              <span className="text-lg shrink-0 mt-0.5">
-                {burnoutStatus === "low" ? "✅" : burnoutStatus === "elevated" ? "⚠️" : "💛"}
-              </span>
-              <p className={["text-sm font-medium",
-                burnoutStatus === "low" ? "text-green-800" :
-                burnoutStatus === "elevated" ? "text-red-800" :
-                "text-amber-800"
-              ].join(" ")}>{guidance}</p>
+            <div
+              className={[
+                "paper-panel flex items-start gap-4 px-5 py-4",
+                burnoutStatus === "low"
+                  ? "border-[#7eb6aa] bg-[linear-gradient(135deg,rgba(220,239,232,0.9),rgba(250,246,239,0.96))]"
+                  : burnoutStatus === "elevated"
+                    ? "border-[#d6968e] bg-[linear-gradient(135deg,rgba(246,216,210,0.95),rgba(250,246,239,0.98))]"
+                    : "border-[#d2a574] bg-[linear-gradient(135deg,rgba(244,225,203,0.95),rgba(250,246,239,0.98))]",
+              ].join(" ")}
+            >
+              <span className="text-lg shrink-0 mt-0.5 text-slate-700">◆</span>
+              <p className="text-sm leading-relaxed text-slate-800">{guidance}</p>
             </div>
           )}
 
-          {/* Chart */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-slate-700">Last 7 Days</CardTitle>
@@ -183,13 +213,12 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Premium CTA if free */}
-          {!isPremium && recentEntries.length >= 5 && (
-            <Card className="border-indigo-200 bg-gradient-to-r from-indigo-50 to-violet-50">
-              <CardContent className="pt-4 pb-4 flex items-center justify-between gap-4">
+          {!isPremium && typedRecentEntries.length >= 5 && (
+            <Card className="border-[#d2a574] bg-[linear-gradient(135deg,rgba(244,225,203,0.72),rgba(250,246,239,0.96))]">
+              <CardContent className="pt-5 pb-5 flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold text-indigo-900">Unlock 30/90-day insights</p>
-                  <p className="text-xs text-indigo-700 mt-0.5">See long-term trends, edit history, and export your data.</p>
+                  <p className="text-sm font-semibold text-slate-900">Unlock 30/90-day insights</p>
+                  <p className="text-xs text-slate-700 mt-0.5">See long-term trends, edit history, and export your data.</p>
                 </div>
                 <Button asChild size="sm" className="shrink-0">
                   <Link href="/upgrade">Upgrade</Link>

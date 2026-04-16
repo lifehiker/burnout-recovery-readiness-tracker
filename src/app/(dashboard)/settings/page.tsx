@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
-import { format } from "date-fns"
 import { ExportButton } from "@/components/ExportButton"
 import { ReminderSettings } from "@/components/ReminderSettings"
+import { RestorePurchasesButton } from "@/components/RestorePurchasesButton"
 
 export default async function SettingsPage() {
   const session = await auth()
@@ -21,9 +21,13 @@ export default async function SettingsPage() {
   const isPremium = subscription?.status === "active" || subscription?.status === "trialing"
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
-      <Card>
+    <div className="max-w-3xl space-y-6">
+      <div className="space-y-2">
+        <div className="eyebrow">Preferences</div>
+        <h1 className="text-4xl editorial-title text-slate-900">Settings</h1>
+      </div>
+      <section className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+      <Card className="overflow-hidden">
         <CardHeader><CardTitle>Account</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <div className="flex justify-between items-center">
@@ -35,7 +39,7 @@ export default async function SettingsPage() {
             <span className="text-sm text-muted-foreground">Subscription</span>
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium capitalize">{subscription?.status ?? "Free"}</span>
-              {isPremium && <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">Premium</span>}
+              {isPremium && <span className="text-[11px] border border-[#7eb6aa] bg-[#dcefe8] text-[#205951] px-3 py-1 rounded-full font-semibold uppercase tracking-[0.18em]">Premium</span>}
             </div>
           </div>
           {!isPremium && (
@@ -47,6 +51,18 @@ export default async function SettingsPage() {
           )}
         </CardContent>
       </Card>
+
+      <Card className="border-[#d2a574] bg-[linear-gradient(180deg,rgba(244,225,203,0.62),rgba(250,246,239,0.94))]">
+        <CardHeader><CardTitle>Billing</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm leading-relaxed text-slate-700">
+            If you paid in Stripe and your access is missing, re-check the latest subscription attached to this account email.
+          </p>
+          <RestorePurchasesButton />
+        </CardContent>
+      </Card>
+      </section>
+
       <Card>
         <CardHeader><CardTitle>Reminders</CardTitle></CardHeader>
         <CardContent>
@@ -81,7 +97,7 @@ export default async function SettingsPage() {
       <Card>
         <CardHeader><CardTitle>Support</CardTitle></CardHeader>
         <CardContent>
-          <a href="mailto:support@burnouttracker.app" className="text-sm text-indigo-600 hover:underline">support@burnouttracker.app</a>
+          <a href="mailto:support@burnouttracker.app" className="text-sm text-primary hover:underline">support@burnouttracker.app</a>
         </CardContent>
       </Card>
     </div>

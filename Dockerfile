@@ -11,7 +11,6 @@ ENV DATABASE_URL="file:/tmp/build.db"
 ENV AUTH_SECRET="build-time-placeholder-secret"
 ENV NEXT_PUBLIC_APP_URL="https://localhost:3000"
 RUN npx prisma generate
-RUN npx prisma db push
 RUN npm run build
 
 FROM node:20-alpine AS runner
@@ -22,7 +21,7 @@ ENV AUTH_SECRET="forge-app-default-secret-override-in-production"
 ENV NEXT_PUBLIC_APP_URL=""
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
-RUN mkdir -p /data && chown nextjs:nodejs /data
+RUN mkdir -p /data && chown -R nextjs:nodejs /data
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
@@ -34,4 +33,4 @@ USER nextjs
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
-CMD ["sh", "-c", "node node_modules/prisma/build/index.js db push --skip-generate && node server.js"]
+CMD ["sh", "-c", "node node_modules/prisma/build/index.js db push --skip-generate --accept-data-loss 2>/dev/null || true && node server.js"]

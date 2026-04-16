@@ -31,6 +31,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const body = await req.json()
   const { stress, energy, sleep, soreness, workload, mood, note } = body
+  for (const [key, val] of Object.entries({ stress, energy, sleep, soreness, workload, mood })) {
+    if (typeof val !== "number" || val < 1 || val > 5) {
+      return NextResponse.json({ error: "Invalid value for " + key }, { status: 400 })
+    }
+  }
   const readinessScore = calculateReadinessScore(stress, energy, sleep, soreness, workload, mood)
   const burnoutStatus = getBurnoutStatus(readinessScore, null, null)
   const updated = await prisma.checkIn.update({
@@ -46,6 +51,16 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { id } = await params
   const existing = await prisma.checkIn.findFirst({ where: { id, userId: session.user.id } })
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+  const today = format(new Date(), "yyyy-MM-dd")
+  if (existing.date !== today) {
+    const subscription = await prisma.subscription.findUnique({ where: { userId: session.user.id } })
+    const isPremium = subscription?.status === "active" || subscription?.status === "trialing"
+    if (!isPremium) {
+      return NextResponse.json({ error: "Premium required to delete past entries" }, { status: 403 })
+    }
+  }
+
   await prisma.checkIn.delete({ where: { id } })
   return NextResponse.json({ success: true })
 }

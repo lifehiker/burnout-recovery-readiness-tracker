@@ -18,9 +18,9 @@ function CircularProgress({ score, size }: { score: number; size: "sm" | "lg" })
   const progress = (score / 100) * circumference
   const gap = circumference - progress
 
-  const color = score >= 70 ? "#16a34a" : score >= 45 ? "#ca8a04" : "#dc2626"
-  const trackColor = score >= 70 ? "#dcfce7" : score >= 45 ? "#fef9c3" : "#fee2e2"
-  const textColor = score >= 70 ? "text-green-600" : score >= 45 ? "text-yellow-600" : "text-red-600"
+  const color = score >= 70 ? "#1e6d67" : score >= 45 ? "#b46d2f" : "#c45244"
+  const trackColor = score >= 70 ? "#d9ede8" : score >= 45 ? "#f4e1cb" : "#f6d8d2"
+  const textColor = score >= 70 ? "text-[#1e6d67]" : score >= 45 ? "text-[#b46d2f]" : "text-[#c45244]"
 
   return (
     <div className="relative" style={{ width: dim, height: dim }}>
@@ -32,9 +32,10 @@ function CircularProgress({ score, size }: { score: number; size: "sm" | "lg" })
           style={{ transition: "stroke-dasharray 0.6s ease" }}
         />
       </svg>
+      <div className="absolute inset-[12%] rounded-full bg-white/65 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]" />
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className={cn("font-bold", textColor, isLg ? "text-3xl" : "text-lg")}>{score}</span>
-        {isLg && <span className="text-[10px] text-muted-foreground leading-tight">/ 100</span>}
+        {isLg && <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground leading-tight">Readiness</span>}
       </div>
     </div>
   )
@@ -46,7 +47,7 @@ export function ScoreCard({ score, size = "lg", className }: ScoreCardProps) {
   if (score === null) {
     return (
       <div
-        className={cn("rounded-full border-2 border-dashed border-gray-200 flex items-center justify-center", className)}
+        className={cn("rounded-full border-2 border-dashed border-border/80 bg-white/40 flex items-center justify-center", className)}
         style={{ width: dim, height: dim }}
       >
         <span className="text-muted-foreground text-sm">—</span>

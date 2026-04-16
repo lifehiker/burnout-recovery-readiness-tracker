@@ -12,6 +12,9 @@ export async function POST(req: NextRequest) {
   const { plan } = await req.json()
   const planConfig = STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS]
   if (!planConfig) return NextResponse.json({ error: "Invalid plan" }, { status: 400 })
+  if (!planConfig.priceId) {
+    return NextResponse.json({ error: "Payments not configured" }, { status: 503 })
+  }
   let subscription = await prisma.subscription.findUnique({ where: { userId: session.user.id } })
   let customerId = subscription?.stripeCustomerId
   if (!customerId) {

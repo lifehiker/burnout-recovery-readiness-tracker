@@ -1,6 +1,7 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
+import type { CheckInEntry } from "@/types"
 
 export async function GET() {
   const session = await auth()
@@ -12,10 +13,11 @@ export async function GET() {
     where: { userId: session.user.id },
     orderBy: { date: "desc" },
   })
+  const typedEntries = entries as CheckInEntry[]
   const headers = ["date", "stress", "energy", "sleep", "soreness", "workload", "mood", "readinessScore", "burnoutStatus", "note"]
-  const rows = entries.map(e => [
-    e.date, e.stress, e.energy, e.sleep, e.soreness, e.workload, e.mood, e.readinessScore, e.burnoutStatus,
-    e.note ? '"' + e.note.replace(/"/g, '""') + '"' : ""
+  const rows = typedEntries.map((entry) => [
+    entry.date, entry.stress, entry.energy, entry.sleep, entry.soreness, entry.workload, entry.mood, entry.readinessScore, entry.burnoutStatus,
+    entry.note ? '"' + entry.note.replace(/"/g, '""') + '"' : ""
   ].join(","))
   const newline = String.fromCharCode(10)
   const csv = [headers.join(","), ...rows].join(newline)

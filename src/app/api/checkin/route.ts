@@ -25,6 +25,28 @@ export async function POST(req: NextRequest) {
     }
   }
   const date = format(new Date(), "yyyy-MM-dd")
+  const [subscription, existingToday, totalEntries] = await Promise.all([
+    prisma.subscription.findUnique({ where: { userId: session.user.id } }),
+    prisma.checkIn.findUnique({
+      where: { userId_date: { userId: session.user.id, date } },
+      select: { id: true },
+    }),
+    prisma.checkIn.count({ where: { userId: session.user.id } }),
+  ])
+  const isPremium = subscription?.status === "active" || subscription?.status === "trialing"
+  const isNewDayForFreeUser = !isPremium && !existingToday && totalEntries >= 7
+
+  if (isNewDayForFreeUser) {
+    return NextResponse.json(
+      {
+        error: "Free plan limit reached",
+        code: "FREE_PLAN_LIMIT_REACHED",
+        message: "Upgrade to keep logging new check-ins after your first 7 days.",
+      },
+      { status: 403 }
+    )
+  }
+
   const readinessScore = calculateReadinessScore(stress, energy, sleep, soreness, workload, mood)
   const recent = await prisma.checkIn.findMany({
     where: { userId: session.user.id },
@@ -32,7 +54,10 @@ export async function POST(req: NextRequest) {
     take: 7,
     select: { readinessScore: true },
   })
-  const avg7 = recent.length > 0 ? recent.reduce((a, b) => a + b.readinessScore, 0) / recent.length : null
+  const avg7 =
+    recent.length > 0
+      ? recent.reduce((sum: number, entry: { readinessScore: number }) => sum + entry.readinessScore, 0) / recent.length
+      : null
   const burnoutStatus = getBurnoutStatus(readinessScore, avg7, null)
   const entry = await prisma.checkIn.upsert({
     where: { userId_date: { userId: session.user.id, date } },

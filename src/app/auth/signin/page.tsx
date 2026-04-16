@@ -1,13 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Suspense } from 'react'
 
 function SignInForm() {
   const router = useRouter()
@@ -18,9 +17,10 @@ function SignInForm() {
   const [loading, setLoading] = useState(false)
 
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+  const registered = searchParams.get('registered') === '1'
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault()
     setError('')
     setLoading(true)
     try {
@@ -44,85 +44,106 @@ function SignInForm() {
   }
 
   return (
-    <div className='min-h-screen flex bg-white'>
-      <div className='hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 flex-col justify-between p-12 text-white relative overflow-hidden'>
-        <div className='absolute inset-0 opacity-10'>
-          <div className='absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-white/20 blur-3xl'></div>
-          <div className='absolute bottom-1/4 right-1/4 w-64 h-64 rounded-full bg-violet-300/30 blur-2xl'></div>
-        </div>
-        <div className='relative'>
-          <div className='flex items-center gap-3 mb-2'>
-            <div className='text-3xl'>🧠</div>
-            <span className='text-xl font-semibold tracking-tight'>Burnout Tracker</span>
-          </div>
-        </div>
-        <div className='relative space-y-8'>
-          <div>
-            <h1 className='text-4xl font-bold leading-tight mb-4'>
-              Know your limits<br/>before you hit them.
-            </h1>
-            <p className='text-indigo-100 text-lg leading-relaxed'>
-              A 30-second daily check-in that turns your stress, sleep, and energy signals into a clear readiness score.
-            </p>
-          </div>
-          <div className='space-y-4'>
-            {[
-              { icon: '⚡', label: 'Daily readiness score in 30 seconds' },
-              { icon: '📊', label: 'Track burnout risk over time' },
-              { icon: '🔒', label: 'Your data stays private & secure' },
-            ].map((item) => (
-              <div key={item.label} className='flex items-center gap-3'>
-                <span className='text-xl'>{item.icon}</span>
-                <span className='text-indigo-100'>{item.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className='relative'>
-          <p className='text-indigo-300 text-sm'>
-            Not medical advice. A self-reporting tool for daily awareness.
-          </p>
-        </div>
-      </div>
-      <div className='flex-1 flex flex-col items-center justify-center p-8'>
-        <div className='w-full max-w-sm space-y-6'>
-          <div className='lg:hidden text-center'>
-            <div className='text-5xl mb-3'>🧠</div>
-            <h2 className='text-2xl font-bold text-slate-900'>Burnout Tracker</h2>
-            <p className='text-slate-500 text-sm mt-1'>Daily readiness check-in</p>
-          </div>
-          <div className='hidden lg:block'>
-            <h2 className='text-2xl font-bold text-slate-900'>Welcome back</h2>
-            <p className='text-slate-500 mt-1'>Sign in to your account to continue.</p>
-          </div>
-          <form onSubmit={handleSubmit} className='space-y-4'>
-            <div className='space-y-2'>
-              <Label htmlFor='email'>Email</Label>
-              <Input id='email' type='email' placeholder='you@example.com' value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete='email' />
-            </div>
-            <div className='space-y-2'>
-              <Label htmlFor='password'>Password</Label>
-              <Input id='password' type='password' placeholder='••••••••' value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete='current-password' />
-            </div>
-            {error && (
-              <p className='text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2'>
-                {error}
+    <div className="ambient-stage min-h-screen px-4 py-8 sm:px-6">
+      <div className="ambient-orb ambient-orb-a" />
+      <div className="ambient-orb ambient-orb-b" />
+      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <section className="vault-panel hidden lg:flex lg:flex-col lg:justify-between lg:p-10">
+          <div className="space-y-8">
+            <div className="space-y-3">
+              <div className="eyebrow">Recovery Ready</div>
+              <h1 className="max-w-2xl text-6xl editorial-title text-slate-900">
+                See the drift before the crash announces itself.
+              </h1>
+              <p className="max-w-xl text-base leading-relaxed text-slate-700">
+                A compact daily ledger for stress, sleep, workload, energy, soreness, and focus. No wellness fog. Just a readable pattern.
               </p>
+            </div>
+            <div className="grid gap-3">
+              {[
+                ['01', 'Daily readiness score', 'One composite reading built from six short self-reports.'],
+                ['02', '7 / 30 / 90-day windows', 'Separate a single bad day from a genuine downward slide.'],
+                ['03', 'Premium history tools', 'Edit the record, export it, and inspect longer arcs.'],
+              ].map(([index, title, body]) => (
+                <div key={title} className="mesh-card p-5">
+                  <p className="metric-kicker">{index}</p>
+                  <p className="mt-3 text-2xl editorial-title text-slate-900">{title}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Not medical advice. Built for fast daily awareness, not diagnosis.
+          </p>
+        </section>
+
+        <section className="flex items-center">
+          <div className="w-full rounded-[2rem] border border-border/80 bg-[rgba(252,249,244,0.92)] p-6 shadow-[0_24px_80px_rgba(70,58,43,0.12)] backdrop-blur sm:p-8">
+            <div className="space-y-3">
+              <div className="eyebrow">Sign In</div>
+              <h2 className="text-4xl editorial-title text-slate-900">Welcome back</h2>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Continue your daily ledger and check whether your system is recovering or accumulating strain.
+              </p>
+            </div>
+
+            {registered && (
+              <div className="mt-6 rounded-[1.35rem] border border-[#7eb6aa] bg-[#dcefe8] px-4 py-3 text-sm text-[#205951]">
+                Account created. Sign in to start onboarding.
+              </div>
             )}
-            <Button type='submit' className='w-full h-11' disabled={loading}>
-              {loading ? 'Signing in…' : 'Sign in'}
-            </Button>
-          </form>
-          <p className='text-center text-sm text-slate-600'>
-            Don&apos;t have an account?{' '}
-            <Link href='/auth/signup' className='font-medium text-indigo-600 hover:text-indigo-500'>
-              Create one
-            </Link>
-          </p>
-          <p className='text-center text-xs text-slate-400'>
-            By signing in, you agree this is a self-reporting tool only — not medical advice or a diagnostic tool.
-          </p>
-        </div>
+
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                  autoComplete="email"
+                  className="h-12 rounded-2xl bg-white/80"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                  autoComplete="current-password"
+                  className="h-12 rounded-2xl bg-white/80"
+                />
+              </div>
+              {error && (
+                <p className="rounded-[1.1rem] border border-[#d6968e] bg-[#f6d8d2] px-4 py-3 text-sm text-[#8e3d34]">
+                  {error}
+                </p>
+              )}
+              <Button type="submit" className="h-12 w-full" disabled={loading}>
+                {loading ? 'Signing in...' : 'Sign In'}
+              </Button>
+            </form>
+
+            <div className="mt-6 space-y-3 text-center">
+              <p className="text-sm text-slate-600">
+                Don&apos;t have an account?{' '}
+                <Link href="/auth/signup" className="font-medium text-primary hover:underline">
+                  Create one
+                </Link>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                By signing in, you agree this is a self-reporting tool only and not a diagnostic product.
+              </p>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   )

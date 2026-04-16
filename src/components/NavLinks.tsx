@@ -20,10 +20,10 @@ export function NavLinks() {
           key={link.href}
           href={link.href}
           className={cn(
-            "px-3 py-2 text-sm rounded-md transition-colors",
+            "px-4 py-2 text-sm rounded-full transition-colors tracking-[0.08em] uppercase text-[11px]",
             pathname === link.href || (link.href !== "/dashboard" && pathname.startsWith(link.href))
-              ? "bg-indigo-50 text-indigo-700 font-medium"
-              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              ? "bg-primary text-primary-foreground font-semibold shadow-[0_10px_22px_rgba(17,79,75,0.18)]"
+              : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
           )}
         >
           {link.label}

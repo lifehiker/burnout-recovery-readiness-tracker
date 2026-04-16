@@ -50,10 +50,10 @@ export function getStatusColor(status: BurnoutStatus): string {
 export function getStatusBgColor(status: BurnoutStatus): string {
   switch (status) {
     case "low":
-      return "bg-green-100 text-green-800";
+      return "border-[#7eb6aa] bg-[#dcefe8] text-[#205951]";
     case "watch":
-      return "bg-yellow-100 text-yellow-800";
+      return "border-[#d2a574] bg-[#f4e1cb] text-[#87501d]";
     case "elevated":
-      return "bg-red-100 text-red-800";
+      return "border-[#d6968e] bg-[#f6d8d2] text-[#8e3d34]";
   }
 }

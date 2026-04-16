@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+*.db
+*.sqlite
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env*.local
+.env
+.DS_Store
+coverage
+.vercel
+*.tsbuildinfo
+test-cookies.txt
+test-session.txt

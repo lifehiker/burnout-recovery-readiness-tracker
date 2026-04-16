@@ -170,5 +170,5 @@ Source of truth for all features in the Burnout & Recovery Readiness Tracker.
 
 **Description:** Multi-stage Dockerfile for production deployment with automatic database migration.
 **Status:** completed
-**Implementation notes:** Three stages: deps (npm ci) → builder (prisma generate + db push + next build) → runner (standalone output). CMD runs `prisma db push --skip-generate && node server.js` to auto-migrate on startup. Uses `output: "standalone"` in `next.config.ts`. Dockerfile is in project root.
-**Date added:** 2026-04-14
+**Implementation notes:** Three stages: deps (npm ci) → builder (prisma generate + next build) → runner (standalone output). CMD runs `prisma db push --skip-generate --accept-data-loss || true && node server.js` to auto-migrate on startup. Uses `output: "standalone"` in `next.config.ts`. .dockerignore excludes node_modules/.next/*.db to prevent macOS binaries overwriting linux builds. Dockerfile is in project root.
+**Date modified:** 2026-04-16

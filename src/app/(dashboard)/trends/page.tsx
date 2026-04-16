@@ -1,27 +1,44 @@
 "use client"
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { EmptyState } from "@/components/EmptyState"
+
+import { useEffect, useState } from "react"
+import { format, parseISO } from "date-fns"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts"
+import { EmptyState } from "@/components/EmptyState"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface TrendData {
   dates: string[]
   scores: (number | null)[]
-  signals: { date: string; stress: number; energy: number; sleep: number; soreness: number; workload: number; mood: number }[]
+  signals: {
+    date: string
+    stress: number | null
+    energy: number | null
+    sleep: number | null
+    soreness: number | null
+    workload: number | null
+    mood: number | null
+  }[]
   isPremium: boolean
 }
 
 const SIGNAL_COLORS = {
-  energy: "#22c55e",
-  sleep: "#6366f1",
-  mood: "#f59e0b",
-  stress: "#ef4444",
-  soreness: "#f97316",
-  workload: "#8b5cf6",
+  energy: "#2f7d70",
+  sleep: "#4f6a99",
+  mood: "#b46d2f",
+  stress: "#c45244",
+  soreness: "#cb7d4a",
+  workload: "#7f5d91",
 }
 
 const SIGNAL_LABELS: Record<string, string> = {
@@ -41,49 +58,105 @@ export default function TrendsPage() {
   useEffect(() => {
     setIsLoading(true)
     fetch("/api/trends?days=" + days)
-      .then(r => r.json())
-      .then(d => setData(d))
+      .then((response) => response.json())
+      .then((payload) => setData(payload))
       .catch(() => {})
       .finally(() => setIsLoading(false))
   }, [days])
 
-  const isPremiumRequired = (d: number) => d > 7 && !data?.isPremium
+  const isPremiumRequired = (windowDays: number) => windowDays > 7 && !data?.isPremium
 
-  const chartData = data?.dates.map((date, i) => ({
-    date,
-    score: data.scores[i],
-  })) ?? []
+  const chartData =
+    data?.dates.map((date, index) => ({
+      isoDate: date,
+      date: format(parseISO(date), days === 90 ? "MMM d" : "EEE"),
+      score: data.scores[index],
+    })) ?? []
 
-  const signalData = data?.signals ?? []
+  const signalData =
+    data?.signals.map((entry) => ({
+      ...entry,
+      isoDate: entry.date,
+      date: format(parseISO(entry.date), days === 90 ? "MMM d" : "EEE"),
+    })) ?? []
+
+  const completedDays = chartData.filter((entry) => entry.score !== null).length
+  const averageScore = completedDays
+    ? Math.round(
+        chartData
+          .filter((entry) => entry.score !== null)
+          .reduce((sum, entry) => sum + (entry.score ?? 0), 0) / completedDays
+      )
+    : null
+  const latestScore = [...chartData].reverse().find((entry) => entry.score !== null)?.score ?? null
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">Trends</h1>
-        <div className="flex gap-2">
-          {[7, 30, 90].map(d => (
-            <button
-              key={d}
-              onClick={() => setDays(d)}
-              className={days === d ? "px-3 py-1 text-sm rounded-md bg-indigo-600 text-white" : "px-3 py-1 text-sm rounded-md bg-white text-slate-600 border hover:bg-slate-50"}
-            >
-              {d}d
-            </button>
-          ))}
+      <section className="paper-panel overflow-hidden">
+        <div className="flex flex-col gap-6 p-6 sm:p-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-3">
+              <div className="eyebrow">Pattern Reading</div>
+              <div>
+                <h1 className="text-4xl editorial-title text-slate-900">Trends</h1>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                  Watch the tempo, not just the total. Missing days stay visible so drops, rebounds, and slow drift read honestly.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {[7, 30, 90].map((windowDays) => (
+                <button
+                  key={windowDays}
+                  onClick={() => setDays(windowDays)}
+                  className={
+                    days === windowDays
+                      ? "rounded-full border border-[#2b7068] bg-primary px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary-foreground shadow-[0_12px_26px_rgba(17,79,75,0.16)]"
+                      : "rounded-full border border-border/80 bg-white/70 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
+                  }
+                >
+                  {windowDays}d
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="mesh-card p-5">
+              <p className="metric-kicker">Entries Logged</p>
+              <p className="mt-3 text-4xl editorial-title text-slate-900">{completedDays}</p>
+              <p className="mt-2 text-xs text-muted-foreground">within the selected window</p>
+            </div>
+            <div className="mesh-card p-5">
+              <p className="metric-kicker">Window Average</p>
+              <p className="mt-3 text-4xl editorial-title text-slate-900">{averageScore ?? "—"}</p>
+              <p className="mt-2 text-xs text-muted-foreground">readiness across recorded days</p>
+            </div>
+            <div className="mesh-card p-5">
+              <p className="metric-kicker">Latest Reading</p>
+              <p className="mt-3 text-4xl editorial-title text-slate-900">{latestScore ?? "—"}</p>
+              <p className="mt-2 text-xs text-muted-foreground">most recent completed check-in</p>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
       {isPremiumRequired(days) ? (
-        <Card className="text-center p-8">
-          <div className="text-4xl mb-4">🔒</div>
-          <h3 className="text-lg font-semibold mb-2">Premium Feature</h3>
-          <p className="text-muted-foreground mb-4">30 and 90-day trends are available on the Premium plan.</p>
-          <Button asChild><Link href="/upgrade">Upgrade to Premium</Link></Button>
+        <Card className="border-[#d2a574] bg-[linear-gradient(135deg,rgba(244,225,203,0.72),rgba(250,246,239,0.96))] text-center p-8">
+          <div className="mb-4 text-4xl text-[#87501d]">◆</div>
+          <h3 className="mb-2 text-lg font-semibold">Long-range pattern reading is premium</h3>
+          <p className="mb-4 text-muted-foreground">Unlock 30 and 90-day views to catch slow drift before it compounds.</p>
+          <Button asChild>
+            <Link href="/upgrade">Upgrade to Premium</Link>
+          </Button>
         </Card>
       ) : isLoading ? (
         <div className="flex justify-center py-16 text-muted-foreground">Loading...</div>
-      ) : chartData.filter(d => d.score !== null).length === 0 ? (
-        <EmptyState title="No data yet" description="Complete some check-ins to see your trends." action={{ label: "Check In", href: "/checkin" }} />
+      ) : chartData.filter((entry) => entry.score !== null).length === 0 ? (
+        <EmptyState
+          title="No data yet"
+          description="Complete some check-ins to see your readiness curves and signal mix."
+          action={{ label: "Check In", href: "/checkin" }}
+        />
       ) : (
         <>
           <Card>
@@ -91,49 +164,63 @@ export default function TrendsPage() {
               <CardTitle className="text-sm font-medium">Readiness Score — Last {days} Days</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={240}>
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e8dfd3" />
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                   <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="score" stroke="#6366f1" strokeWidth={2} dot={false} connectNulls={false} />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: 18,
+                      borderColor: "#d8c8b5",
+                      backgroundColor: "rgba(252, 249, 244, 0.95)",
+                    }}
+                    labelFormatter={(_, payload) => payload?.[0]?.payload?.isoDate ?? ""}
+                  />
+                  <Line type="monotone" dataKey="score" stroke="#1e6d67" strokeWidth={3} dot={false} connectNulls={false} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {signalData.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium">Daily Signals — Last {days} Days</CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">Scale: 1 (lowest) to 5 (highest). For stress, soreness &amp; workload, lower is better.</p>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={220}>
-                  <LineChart data={signalData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                    <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 11 }} />
-                    <Tooltip />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                    {Object.entries(SIGNAL_COLORS).map(([key, color]) => (
-                      <Line
-                        key={key}
-                        type="monotone"
-                        dataKey={key}
-                        name={SIGNAL_LABELS[key]}
-                        stroke={color}
-                        strokeWidth={1.5}
-                        dot={false}
-                        connectNulls={false}
-                      />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Daily Signals — Last {days} Days</CardTitle>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Scale: 1 to 5. For stress, soreness, and workload, lower is better.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart data={signalData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e8dfd3" />
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                  <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 11 }} />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: 18,
+                      borderColor: "#d8c8b5",
+                      backgroundColor: "rgba(252, 249, 244, 0.95)",
+                    }}
+                    labelFormatter={(_, payload) => payload?.[0]?.payload?.isoDate ?? ""}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  {Object.entries(SIGNAL_COLORS).map(([key, color]) => (
+                    <Line
+                      key={key}
+                      type="monotone"
+                      dataKey={key}
+                      name={SIGNAL_LABELS[key]}
+                      stroke={color}
+                      strokeWidth={1.5}
+                      dot={false}
+                      connectNulls={false}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         </>
       )}
     </div>

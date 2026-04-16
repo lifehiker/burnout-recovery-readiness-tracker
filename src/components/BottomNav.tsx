@@ -37,8 +37,8 @@ const navItems = [
 export function BottomNav() {
   const pathname = usePathname()
   return (
-    <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50">
-      <div className="flex items-stretch">
+    <nav className="sm:hidden fixed bottom-3 left-3 right-3 z-50">
+      <div className="flex items-stretch rounded-[1.6rem] border border-border/80 bg-card/95 shadow-[0_25px_60px_rgba(70,58,43,0.16)] backdrop-blur-xl">
         {navItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))
           return (
@@ -46,8 +46,8 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors relative",
-                isActive ? "text-indigo-600" : "text-slate-500 hover:text-indigo-600"
+                "flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors relative rounded-[1.4rem]",
+                isActive ? "text-primary" : "text-slate-500 hover:text-primary"
               )}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -55,7 +55,7 @@ export function BottomNav() {
                   <path key={i} strokeLinecap="round" strokeLinejoin="round" d={d} />
                 ))}
               </svg>
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.18em]">{item.label}</span>
             </Link>
           )
         })}
