@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
@@ -9,7 +8,19 @@ import { BottomNav } from "@/components/BottomNav"
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
   if (!session?.user) {
-    redirect("/auth/signin")
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-center space-y-4">
+          <p className="text-slate-600">Sign in to access your recovery dashboard.</p>
+          <a
+            href="/auth/signin"
+            className="inline-flex h-11 items-center justify-center rounded-2xl bg-primary px-8 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Sign In
+          </a>
+        </div>
+      </div>
+    )
   }
 
   const settings = await prisma.userSettings.findUnique({
@@ -17,7 +28,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
   })
 
   if (!settings?.hasCompletedOnboarding) {
-    redirect("/onboarding")
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-center space-y-4">
+          <p className="text-slate-600">Please complete onboarding first.</p>
+          <a
+            href="/onboarding"
+            className="inline-flex h-11 items-center justify-center rounded-2xl bg-primary px-8 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Complete Setup
+          </a>
+        </div>
+      </div>
+    )
   }
 
   return (
