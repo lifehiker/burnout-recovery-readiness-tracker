@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -13,7 +13,7 @@ const features = [
   "Premium insights & guidance",
 ]
 
-export default function UpgradePage() {
+function UpgradePageInner() {
   const searchParams = useSearchParams()
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">("annual")
   const [isLoading, setIsLoading] = useState(false)
@@ -152,5 +152,13 @@ export default function UpgradePage() {
         </div>
       </section>
     </div>
+  )
+}
+
+export default function UpgradePage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-16"><div className="rounded-full border border-border/70 bg-card/80 px-4 py-2 text-sm text-muted-foreground shadow-sm">Loading...</div></div>}>
+      <UpgradePageInner />
+    </Suspense>
   )
 }

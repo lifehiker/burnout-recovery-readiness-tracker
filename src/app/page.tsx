@@ -18,7 +18,7 @@ export default async function Home() {
           See the drift before the crash announces itself.
         </h1>
         <p className="text-base leading-relaxed text-slate-700">
-          A compact daily ledger for stress, sleep, workload, energy, soreness, and focus.
+          A compact daily ledger for stress, sleep, workload, energy, soreness, and mood.
         </p>
         <div className="flex items-center justify-center gap-4">
           <Link

@@ -41,9 +41,10 @@ export default async function DashboardPage() {
   const last7 = last7Entries.map((entry) => entry.readinessScore)
   const sevenDayAvg = last7.length > 0 ? Math.round(last7.reduce((a, b) => a + b, 0) / last7.length) : null
 
-  const midpoint = Math.floor(last7.length / 2)
-  const olderWindow = last7.slice(0, midpoint)
-  const recentWindow = last7.slice(midpoint)
+  const all30Scores = chronologicalEntries.map((entry) => entry.readinessScore)
+  const midpoint30 = Math.floor(all30Scores.length / 2)
+  const olderWindow = all30Scores.slice(0, midpoint30)
+  const recentWindow = all30Scores.slice(midpoint30)
   const trendDelta =
     olderWindow.length > 0 && recentWindow.length > 0
       ? calculateTrendDelta(recentWindow, olderWindow)
