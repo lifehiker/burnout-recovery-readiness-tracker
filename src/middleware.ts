@@ -23,7 +23,7 @@ export default auth((request: NextRequest) => {
           : normalizedPath
     const url = request.nextUrl.clone()
     url.pathname = redirectPath
-    return NextResponse.redirect(url)
+    return NextResponse.rewrite(url)
   }
 
   return NextResponse.next()
