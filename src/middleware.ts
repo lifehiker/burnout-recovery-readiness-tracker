@@ -1,13 +1,9 @@
-import NextAuth from "next-auth"
-import { authConfig } from "./auth.config"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
-const { auth } = NextAuth(authConfig)
-
 const DASHBOARD_GROUP_PREFIXES = ["/(dashboard)", "/%28dashboard%29"]
 
-export default auth((request: NextRequest) => {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const matchedPrefix = DASHBOARD_GROUP_PREFIXES.find(
     (prefix) => pathname === prefix || pathname.startsWith(prefix + "/")
@@ -27,8 +23,8 @@ export default auth((request: NextRequest) => {
   }
 
   return NextResponse.next()
-})
+}
 
 export const config = {
-  matcher: ["/:path*"],
+  matcher: ["/((?!_next/static|_next/image|favicon\\.ico|.*\\..*).*)"],
 }
