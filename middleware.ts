@@ -22,7 +22,7 @@ export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone()
   url.pathname = redirectPath
 
-  return NextResponse.redirect(url)
+  return NextResponse.rewrite(url)
 }
 
 export const config = {
