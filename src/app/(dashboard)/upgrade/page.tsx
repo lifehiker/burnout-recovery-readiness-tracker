@@ -18,7 +18,7 @@ function UpgradePageInner() {
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">("annual")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const reason = searchParams.get("reason")
+  const reason = searchParams?.get("reason")
 
   const reasonCopy =
     reason === "free-limit"

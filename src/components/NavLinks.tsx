@@ -21,7 +21,7 @@ export function NavLinks() {
           href={link.href}
           className={cn(
             "px-4 py-2 text-sm rounded-full transition-colors tracking-[0.08em] uppercase text-[11px]",
-            pathname === link.href || (link.href !== "/dashboard" && pathname.startsWith(link.href))
+            pathname === link.href || (link.href !== "/dashboard" && (pathname?.startsWith(link.href) ?? false))
               ? "bg-primary text-primary-foreground font-semibold shadow-[0_10px_22px_rgba(17,79,75,0.18)]"
               : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
           )}

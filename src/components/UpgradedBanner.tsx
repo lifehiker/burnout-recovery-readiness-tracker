@@ -7,7 +7,7 @@ export function UpgradedBanner() {
   const [show, setShow] = useState(false)
 
   useEffect(() => {
-    if (searchParams.get("upgraded") === "true") {
+    if (searchParams?.get("upgraded") === "true") {
       setShow(true)
       const timer = setTimeout(() => setShow(false), 8000)
       return () => clearTimeout(timer)

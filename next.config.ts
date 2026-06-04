@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
           destination: "/:path*",
         },
       ],
+      afterFiles: [],
+      fallback: [],
     };
   },
 };

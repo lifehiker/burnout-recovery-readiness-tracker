@@ -40,7 +40,7 @@ export function BottomNav() {
     <nav className="sm:hidden fixed bottom-3 left-3 right-3 z-50">
       <div className="flex items-stretch rounded-[1.6rem] border border-border/80 bg-card/95 shadow-[0_25px_60px_rgba(70,58,43,0.16)] backdrop-blur-xl">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))
+          const isActive = pathname === item.href || (item.href !== "/dashboard" && (pathname?.startsWith(item.href) ?? false))
           return (
             <Link
               key={item.href}

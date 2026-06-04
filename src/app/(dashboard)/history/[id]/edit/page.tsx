@@ -23,7 +23,7 @@ const signals = [
 
 export default function EditEntryPage() {
   const router = useRouter()
-  const { id } = useParams<{ id: string }>()
+  const { id } = useParams<{ id: string }>()!
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [date, setDate] = useState("")
