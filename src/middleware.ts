@@ -6,11 +6,6 @@ const DASHBOARD_GROUP_PREFIXES = ["/(dashboard)", "/%28dashboard%29"]
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // /(dashboard)/checkin is served directly by the pages router; skip rewrite
-  if (pathname === "/(dashboard)/checkin" || pathname === "/%28dashboard%29/checkin") {
-    return NextResponse.next()
-  }
-
   const matchedPrefix = DASHBOARD_GROUP_PREFIXES.find(
     (prefix) => pathname === prefix || pathname.startsWith(prefix + "/")
   )
