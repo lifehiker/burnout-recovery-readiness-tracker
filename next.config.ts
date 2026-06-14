@@ -4,7 +4,12 @@ const nextConfig: NextConfig = {
   output: "standalone",
   async rewrites() {
     return {
-      beforeFiles: [],
+      beforeFiles: [
+        {
+          source: "/\\(dashboard\\)/:path*",
+          destination: "/:path*",
+        },
+      ],
       afterFiles: [],
       fallback: [],
     };
