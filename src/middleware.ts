@@ -20,7 +20,7 @@ export function middleware(request: NextRequest) {
           : normalizedPath
     const url = request.nextUrl.clone()
     url.pathname = redirectPath
-    return NextResponse.rewrite(url)
+    return NextResponse.redirect(url, 302)
   }
 
   return NextResponse.next()
