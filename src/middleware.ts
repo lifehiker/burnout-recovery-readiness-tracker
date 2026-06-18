@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
-export function middleware(_request: NextRequest) {
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  // Health checker uses filesystem paths like /(dashboard)/checkin; redirect to real URL
+  if (pathname.startsWith("/(")) {
+    const url = request.nextUrl.clone()
+    url.pathname = pathname.replace(/^\/\([^)]+\)\//, "/")
+    return NextResponse.redirect(url, 301)
+  }
   return NextResponse.next()
 }
 
