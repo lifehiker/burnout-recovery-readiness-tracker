@@ -7,7 +7,7 @@ export function middleware(request: NextRequest) {
   if (pathname.startsWith("/(")) {
     const url = request.nextUrl.clone()
     url.pathname = pathname.replace(/^\/\([^)]+\)\//, "/")
-    return NextResponse.redirect(url, 301)
+    return NextResponse.rewrite(url)
   }
   return NextResponse.next()
 }
