@@ -104,7 +104,7 @@ export default function CheckInPage() {
             <div className="eyebrow">{existingId ? "Edit Entry" : "Daily Check-In"}</div>
             <div>
               <h1 className="text-4xl editorial-title text-slate-900 sm:text-5xl">
-                {existingId ? "Refine today’s reading." : "Capture today before it blurs."}
+                {existingId ? "Refine today's reading." : "Capture today before it blurs."}
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-700 sm:text-base">
                 Rate the six signals, watch the score shift in real time, and leave a short note if something explains the day.
